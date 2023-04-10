@@ -1,0 +1,333 @@
+from pathlib import Path
+import pandas as pd
+
+from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage, StringVar , Frame, Listbox, Scrollbar, Label, END
+from scrapehouseprice import Scraper
+import housepriceprediction as hpp
+
+
+OUTPUT_PATH = Path(__file__).parent
+ASSETS_PATH = OUTPUT_PATH / Path(r"/Users/andrew/Desktop/LearningC++/RealEstateGUI/build/assets/frame0")
+
+
+def relative_to_assets(path: str) -> Path:
+    return ASSETS_PATH / Path(path)
+
+
+def onClick():
+    beds = int(numberofBedsEntry.get())
+    baths = int(numberOfBathsEntry.get())
+    size = int(sizeEntry.get())
+    
+    zipCode = int(zipCodeEntry.get())
+    myScraper = Scraper()
+    df = myScraper.getData(zipCode)
+    return df, beds, baths, size, zipCode
+
+def getPrice():
+    df, beds, baths, size, zipCode = onClick()
+    
+    price = hpp.main(df, beds, baths, size, zipCode)
+    price = [eachNum for innerLoop in price for eachNum in innerLoop]
+    price = "".join(map(str,price))
+    getListings(df)
+    return formatPrice(price)
+
+def formatPrice(price):
+    price = float(price)
+    price = round(price, 2)
+    price = "{:,}".format(float(price))
+    price = "".join(["$",price])
+    return price
+
+def getListings(df):
+    scrollableList.delete(0, END)
+    df = df.drop(["address"], axis = "columns")
+    df = df.dropna()
+    for index,rows in df.iterrows():
+        scrollableList.insert(END, f"{rows['beds']} beds, {rows['baths']} baths, {rows['size']} sqft, {rows['zip_code']}, ${rows['price']}, {rows['link']}")
+    
+def tabOrder():
+    numberofBedsEntry.focus()
+    order = [numberofBedsEntry, numberOfBathsEntry, sizeEntry, zipCodeEntry]
+    for i in order:
+        i.lift()
+
+
+window = Tk()
+
+window.geometry("1280x720")
+window.configure(bg = "#FFFFFF")
+
+
+canvas = Canvas(
+    window,
+    bg = "#FFFFFF",
+    height = 720,
+    width = 1280,
+    bd = 0,
+    highlightthickness = 0,
+    relief = "ridge"
+)
+
+canvas.place(x = 0, y = 0)
+canvas.create_rectangle(
+    0.0,
+    0.0,
+    1280.0,
+    720.0,
+    fill="#FFFFFF",
+    outline="")
+
+canvas.create_text(
+    369.0,
+    53.0,
+    anchor="nw",
+    text="Real Estate Predictor",
+    fill="#000000",
+    font=("Inter Bold", 50 * -1)
+)
+
+#Number of Beds Entry
+numberOfBedsImage = PhotoImage(
+    file=relative_to_assets("entry_1.png"))
+entry_bg_1 = canvas.create_image(
+    247.0,
+    223.0,
+    image=numberOfBedsImage
+)
+numberofBedsEntry = Entry(
+    bd=0,
+    bg="#D9D9D9",
+    fg="#000716",
+    highlightthickness=0,
+    font=("Inter", 25)
+)
+numberofBedsEntry.place(
+    x=109.0,
+    y=192.0,
+    width=276.0,
+    height=60.0
+)
+
+
+canvas.create_text(
+    90.0,
+    192-36, 
+    anchor="nw",
+    text="Enter # of Beds",
+    fill="#000000",
+    font=("Inter", 25 * -1)
+)
+
+
+
+#Zip Code Entry
+entry_image_2 = PhotoImage(
+    file=relative_to_assets("entry_2.png"))
+entry_bg_2 = canvas.create_image(
+    246.9061737060547,
+    559.0,
+    image=entry_image_2
+)
+zipCodeEntry = Entry(
+    bd=0,
+    bg="#D9D9D9",
+    fg="#000716",
+    highlightthickness=0,
+    font=("Inter", 25)
+)
+zipCodeEntry.place(
+    x=109.0,
+    y=528.0,
+    width=275.8123474121094,
+    height=60.0
+)
+
+canvas.create_text(
+    90.0,
+    528-36,
+    anchor="nw",
+    text="Enter the Zip Code",
+    fill="#000000",
+    font=("Inter", 25 * -1)
+)
+
+
+
+#Size entry
+entry_image_3 = PhotoImage(
+    file=relative_to_assets("entry_3.png"))
+entry_bg_3 = canvas.create_image(
+    247.0,
+    453.0,
+    image=entry_image_3
+)
+sizeEntry = Entry(
+    bd=0,
+    bg="#D9D9D9",
+    fg="#000716",
+    highlightthickness=0,
+    font=("Inter", 25)
+)
+sizeEntry.place(
+    x=109.0,
+    y=422.0,
+    width=276.0,
+    height=60.0
+)
+
+canvas.create_text(
+    90,
+    422-36,
+    anchor="nw",
+    text="Enter the Size",
+    fill="#000000",
+    font=("Inter Regular", 25 * -1)
+)
+
+
+
+# Enter the number of baths
+numberOfBathsImage = PhotoImage(
+    file=relative_to_assets("entry_4.png"))
+entry_bg_4 = canvas.create_image(
+    247.0,
+    347.0,
+    image=numberOfBathsImage
+)
+
+numberOfBathsEntry = Entry(
+    bd=0,
+    bg="#D9D9D9",
+    fg="#000716",
+    highlightthickness=0,
+    font=("Inter", 25)
+)
+numberOfBathsEntry.place(
+    x=109.0,
+    y=316.0,
+    width=276.0,
+    height=60.0
+)
+canvas.create_text(
+    90.0,
+    280.0,
+    anchor="nw",
+    text="Enter # of Baths",
+    fill="#000000",
+    font=("Inter", 25 * -1)
+)
+
+tabOrder()
+
+
+#Current Listings Box
+
+currentListingsFrame = Frame(takefocus= 0)
+
+
+canvas.create_rectangle(
+    881.0,
+    119.0,
+    1257.0,
+    666.0,
+    fill="#D9D9D9",
+    outline="")
+
+
+
+scrollableList = Listbox(currentListingsFrame, width=100, height=200, activestyle="dotbox", selectmode= "extended", bg= "yellow", takefocus= 0)
+myScrollBar = Scrollbar(currentListingsFrame, orient= "vertical", takefocus=0)
+
+scrollableList.place(width=300, height= 400,x= 0, y= 0)
+scrollableList.config(yscrollcommand=myScrollBar.set)
+
+myScrollBar.place(x=280, y= 0, width= 20,height= 400)
+myScrollBar.config(command = scrollableList.yview)
+
+currentListingsFrame.place(x=910,y=200, width= 300, height=400)
+
+
+#current listings text
+canvas.create_text(
+    912.0,
+    144.0,
+    anchor="nw",
+    text="Current Listings",
+    fill="#000000",
+    font=("Inter Regular", 40 * -1)
+)
+
+
+#Predict Button
+button_image_1 = PhotoImage(
+    file=relative_to_assets("button_1.png"))
+button_1 = Button(
+    image=button_image_1,
+    borderwidth=0,
+    highlightthickness=0,
+    command= lambda: [predictionVar.set(getPrice())],
+    relief="flat",
+    takefocus= 0,
+)
+
+
+
+button_1.place(
+    x=558.0,
+    y=210.0,
+    width=163.0,
+    height=163.0
+)
+canvas.create_text(
+    558,
+    210-36,
+    anchor="nw",
+    text="Press to Predict",
+    fill="#000000",
+    font=("Inter Regular", 25 * -1)
+)
+
+
+
+#Prediction output
+entry_image_5 = PhotoImage(
+    file=relative_to_assets("entry_5.png"))
+entry_bg_5 = canvas.create_image(
+    640.0,
+    506.0,
+    image=entry_image_5
+)
+predictionVar = StringVar()
+
+
+predictionOutput = Entry(
+    bd=0,
+    bg="#D9D9D9",
+    fg="#000716",
+    highlightthickness=0,
+    font=("Inter", 25),
+    textvariable= predictionVar,
+    readonlybackground= "#D9D9D9",
+    takefocus= 0,
+    state="readonly"
+)
+
+predictionOutput.place(
+    x=502.0,
+    y=475.0,
+    width=276.0,
+    height=60.0
+)
+
+canvas.create_text(
+    494.0,
+    475-36,
+    anchor="nw",
+    text="Prediction: ",
+    fill="#000000",
+    font=("Inter Regular", 25 * -1)
+)
+window.resizable(False, False)
+window.mainloop()
